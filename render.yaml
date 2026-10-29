@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: stroke-ai-system
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: RAG_API_URL
+        value: https://research-assistant-pa3v.onrender.com/api/v1
+      - key: RAG_USER_EMAIL
+        value: mdashraf228144@gmail.com

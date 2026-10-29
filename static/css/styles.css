@@ -1,0 +1,81 @@
+:root {
+  --app-bg: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 38%, #eef6ff 100%);
+  --app-surface: rgba(255, 255, 255, 0.88);
+  --app-border: rgba(14, 116, 144, 0.12);
+  --app-shadow: 0 20px 45px rgba(14, 116, 144, 0.08);
+  --app-text: #0f172a;
+  --app-accent: #0f766e;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body.app-shell {
+  background: var(--app-bg);
+  color: var(--app-text);
+  background-attachment: fixed;
+}
+
+.app-header,
+.app-footer {
+  background: var(--app-surface);
+  border-color: var(--app-border);
+  box-shadow: var(--app-shadow);
+}
+
+.app-main {
+  position: relative;
+}
+
+.app-main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.14), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.1), transparent 26%);
+}
+
+.css-debug-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(15, 118, 110, 0.25);
+  border-radius: 999px;
+  background: rgba(240, 253, 250, 0.92);
+  color: var(--app-accent);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 30px rgba(15, 118, 110, 0.08);
+}
+
+.css-debug-chip::before {
+  content: "";
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  background: #14b8a6;
+  box-shadow: 0 0 0 6px rgba(20, 184, 166, 0.15);
+}
+
+.toast-enter {
+  animation: toastIn 0.25s ease-out;
+}
+
+@keyframes toastIn {
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

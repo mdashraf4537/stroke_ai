@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "Stroke AI System" }}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js (Report page) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="{{ static_file('css/styles.css') }}">
+</head>
+<body class="app-shell min-h-screen text-slate-900">
+
+  <!-- Navbar -->
+  <header class="app-header sticky top-0 z-40 border-b bg-white/90 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <a href="{{ url_for('home') }}" class="flex items-center gap-2 font-semibold">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">S</span>
+        <span>Stroke AI</span>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-2">
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('home') }}">Home</a>
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('about') }}">About</a>
+
+        {% if current_user.is_authenticated %}
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('predict_numerical') }}">Numerical Prediction</a>
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('predict_image') }}">Image Prediction</a>
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('history') }}">History</a>
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('report') }}">Report</a>
+          <a class="ml-2 inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800" href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('login') }}">Login</a>
+          <a class="ml-2 inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500" href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+      </nav>
+
+      <div class="md:hidden">
+        <button id="mBtn" class="rounded-lg border px-3 py-2">Menu</button>
+      </div>
+    </div>
+
+    <div id="mNav" class="hidden border-t bg-white md:hidden">
+      <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2">
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('home') }}">Home</a>
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('about') }}">About</a>
+
+        {% if current_user.is_authenticated %}
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('predict_numerical') }}">Numerical Prediction</a>
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('predict_image') }}">Image Prediction</a>
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('history') }}">History</a>
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('report') }}">Report</a>
+          <a class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800" href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('login') }}">Login</a>
+          <a class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500" href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-6xl px-4 pt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-3">
+          {% for category, msg in messages %}
+            {% set color = "bg-indigo-50 border-indigo-200 text-indigo-900" %}
+            {% if category == "error" %}{% set color = "bg-rose-50 border-rose-200 text-rose-900" %}{% endif %}
+            {% if category == "success" %}{% set color = "bg-emerald-50 border-emerald-200 text-emerald-900" %}{% endif %}
+            {% if category == "warning" %}{% set color = "bg-amber-50 border-amber-200 text-amber-900" %}{% endif %}
+
+            <div data-alert class="toast-enter flex items-start justify-between gap-3 rounded-xl border px-4 py-3 {{ color }}">
+              <div class="text-sm">{{ msg }}</div>
+              <button data-alert-close class="rounded-lg px-2 py-1 hover:bg-black/5">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <main class="app-main mx-auto max-w-6xl px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="app-footer border-t bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-6 text-sm text-slate-600 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div>&copy; {{ now_year }} Stroke AI System</div>
+      <div class="flex gap-3">
+        <span class="text-slate-400">MITT</span>
+      </div>
+    </div>
+  </footer>
+
+  {% if current_user.is_authenticated %}
+  <!-- Slide-Over Clinical Guidelines & Web RAG Chatbot Drawer -->
+  <div id="clinicalQaBackdrop" onclick="closeClinicalQaDrawer()" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-xs transition-opacity"></div>
+
+  <aside id="clinicalQaDrawer" class="fixed top-0 right-0 z-50 h-full w-full max-w-xl translate-x-full transform bg-white shadow-2xl border-l border-slate-200 transition-transform duration-300 ease-in-out flex flex-col">
+    <!-- Drawer Header -->
+    <div class="border-b bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 px-5 py-4 text-white">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-xs font-bold">AHA</span>
+            <h2 class="text-lg font-semibold">Ask Clinical Guidelines &amp; Web RAG</h2>
+          </div>
+          <p class="mt-1 text-xs text-indigo-100">
+            Searches local AHA/ASA stroke guidelines first; automatically falls back to live Google &amp; PubMed RAG if not in the local knowledge base.
+          </p>
+        </div>
+        <button type="button" onclick="closeClinicalQaDrawer()" class="rounded-lg bg-white/10 px-2.5 py-1 text-sm text-white hover:bg-white/20 transition">&times;</button>
+      </div>
+
+      <!-- Retrieval Mode Selector -->
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/15 text-xs">
+        <span class="text-indigo-200 font-medium">Retrieval Mode:</span>
+        <select id="qaSearchMode" class="rounded-lg bg-slate-900/80 border border-white/20 px-2.5 py-1 text-xs text-white focus:outline-none">
+          <option value="auto">Auto (AHA/ASA KB &rarr; Google Search RAG)</option>
+          <option value="kb_only">Local AHA/ASA Knowledge Base Only</option>
+          <option value="web_only">Force Google / PubMed Web Search RAG</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Attached Patient Case Context Banner -->
+    <div id="qaPatientBanner" class="hidden border-b border-indigo-200 bg-indigo-50/90 px-4 py-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 text-xs text-indigo-950 truncate">
+        <span class="inline-flex items-center rounded-md bg-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase">Patient Case</span>
+        <span id="qaPatientSummaryText" class="font-semibold truncate"></span>
+      </div>
+      <button type="button" onclick="clearClinicalQaCase()" class="shrink-0 text-xs font-medium text-rose-600 hover:underline">Detach Case &times;</button>
+    </div>
+
+    <!-- Suggested Starter Prompts (Doctor can click or type ANY question below) -->
+    <div class="border-b bg-slate-50 px-4 py-2.5">
+      <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Example Clinical Questions (or type any question below)</div>
+      <div class="mt-1.5 flex flex-wrap gap-1.5">
+        <button type="button" onclick="fillQaQuestion('Can this patient receive tPA if symptoms started 3.5 hours ago but blood pressure is 190/110?')" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:border-indigo-400 hover:text-indigo-700 transition text-left">
+          tPA eligibility at 3.5h with BP 190/110?
+        </button>
+        <button type="button" onclick="fillQaQuestion('What is the target systolic blood pressure for acute ICH according to AHA/ASA 2022?')" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:border-indigo-400 hover:text-indigo-700 transition text-left">
+          Target SBP for acute ICH (AHA/ASA 2022)?
+        </button>
+        <button type="button" onclick="fillQaQuestion('What are the eligibility criteria and time window for mechanical thrombectomy in acute ischemic stroke?')" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:border-indigo-400 hover:text-indigo-700 transition text-left">
+          Mechanical thrombectomy window?
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Conversation Thread -->
+    <div id="qaChatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/40">
+      <div class="rounded-2xl border border-slate-200 bg-white p-4 text-xs text-slate-600 shadow-xs">
+        <div class="font-semibold text-slate-800 text-sm">Clinical Guidelines &amp; Web RAG Ready</div>
+        <p class="mt-1 leading-relaxed">
+          Ask any question about stroke protocols, thrombolysis/thrombectomy eligibility, blood pressure management, drug contraindications, or patient follow-up.
+        </p>
+        <div class="mt-2 flex flex-wrap gap-2 text-[11px]">
+          <span class="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-emerald-800 font-medium">Ingested AHA/ASA Guidelines</span>
+          <span class="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-blue-800 font-medium">Live Google &amp; PubMed RAG Fallback</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Free-Form Chat Input -->
+    <form id="qaChatForm" onsubmit="submitClinicalQa(event)" class="border-t bg-white p-4">
+      <div class="flex items-end gap-2">
+        <textarea
+          id="qaQuestionInput"
+          rows="2"
+          placeholder="Ask any clinical question (e.g., tPA dosing, BP targets, ICH reversal)... Press Enter to send"
+          class="w-full resize-none rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 focus:outline-none"
+          required
+        ></textarea>
+        <button
+          id="qaSendBtn"
+          type="submit"
+          class="shrink-0 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition"
+        >
+          Send
+        </button>
+      </div>
+    </form>
+  </aside>
+  {% endif %}
+
+  <script src="{{ static_file('js/main.js') }}"></script>
+  <script>
+    const mBtn = document.getElementById('mBtn');
+    const mNav = document.getElementById('mNav');
+    if (mBtn && mNav) mBtn.addEventListener('click', () => mNav.classList.toggle('hidden'));
+  </script>
+</body>
+</html>

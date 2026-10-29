@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-3xl font-semibold">Image Prediction</h1>
+<p class="mt-2 text-slate-600 text-sm">Select the neuroimaging modality to run classification and Grad-CAM localization.</p>
+<div class="mt-6 grid sm:grid-cols-2 gap-6">
+  <a href="{{ url_for('predict_image_mri') }}" class="rounded-3xl bg-white border p-6 shadow-sm hover:border-indigo-300 hover:shadow-md transition flex flex-col justify-between">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Magnetic Resonance Imaging</div>
+      <div class="mt-1 text-xl font-semibold text-slate-900">Brain MRI Prediction</div>
+      <p class="mt-2 text-sm text-slate-600 leading-relaxed">Classify brain MRI scans into Haemorrhagic, Ischemic, or Normal categories with Grad-CAM visual attention overlays.</p>
+    </div>
+    <div class="mt-5">
+      <span class="inline-block rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white">Open MRI Module</span>
+    </div>
+  </a>
+  <a href="{{ url_for('predict_image_ct') }}" class="rounded-3xl bg-white border p-6 shadow-sm hover:border-indigo-300 hover:shadow-md transition flex flex-col justify-between">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Computed Tomography</div>
+      <div class="mt-1 text-xl font-semibold text-slate-900">Brain CT Scan Prediction</div>
+      <p class="mt-2 text-sm text-slate-600 leading-relaxed">Classify non-contrast brain CT scans into Hemorrhage, Ischemia, or Normal categories with Grad-CAM visual attention overlays.</p>
+    </div>
+    <div class="mt-5">
+      <span class="inline-block rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white">Open CT Module</span>
+    </div>
+  </a>
+</div>
+{% endblock %}

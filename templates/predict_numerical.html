@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-6">
+  <div class="lg:w-1/2 rounded-3xl bg-white border p-6 shadow-sm">
+    <h1 class="text-2xl font-semibold">Numerical Prediction</h1>
+    <p class="mt-2 text-slate-600 text-sm">Enter clinical details. The model returns probability and label.</p>
+
+    <form class="mt-6 space-y-4" method="POST">
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-medium">Gender</label>
+          <select name="gender" class="mt-1 w-full rounded-xl border px-4 py-3">
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">Age</label>
+          <input name="age" type="number" step="1" min="0" max="120" required
+                 class="mt-1 w-full rounded-xl border px-4 py-3" placeholder="e.g., 45">
+        </div>
+        <div>
+          <label class="text-sm font-medium">Hypertension</label>
+          <select name="hypertension" class="mt-1 w-full rounded-xl border px-4 py-3">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">Heart Disease</label>
+          <select name="heart_disease" class="mt-1 w-full rounded-xl border px-4 py-3">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">Ever Married</label>
+          <select name="ever_married" class="mt-1 w-full rounded-xl border px-4 py-3">
+            <option>Yes</option>
+            <option>No</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">Work Type</label>
+          <select name="work_type" class="mt-1 w-full rounded-xl border px-4 py-3">
+            <option>Private</option>
+            <option>Self-employed</option>
+            <option>Govt_job</option>
+            <option>children</option>
+            <option>Never_worked</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">Residence Type</label>
+          <select name="Residence_type" class="mt-1 w-full rounded-xl border px-4 py-3">
+            <option>Urban</option>
+            <option>Rural</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium">Avg Glucose Level</label>
+          <input name="avg_glucose_level" type="number" step="0.01" min="0" required
+                 class="mt-1 w-full rounded-xl border px-4 py-3" placeholder="e.g., 105.2">
+        </div>
+        <div>
+          <label class="text-sm font-medium">BMI</label>
+          <input name="bmi" type="number" step="0.01" min="0"
+                 class="mt-1 w-full rounded-xl border px-4 py-3" placeholder="e.g., 28.7 (optional)">
+        </div>
+        <div>
+          <label class="text-sm font-medium">Smoking Status</label>
+          <select name="smoking_status" class="mt-1 w-full rounded-xl border px-4 py-3">
+            <option>never smoked</option>
+            <option>formerly smoked</option>
+            <option>smokes</option>
+            <option>Unknown</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="w-full rounded-xl bg-indigo-600 px-4 py-3 text-white font-medium hover:bg-indigo-500">
+        Predict Stroke Risk
+      </button>
+    </form>
+  </div>
+
+  <div class="lg:w-1/2 rounded-3xl bg-white border p-6 shadow-sm">
+    <h2 class="text-xl font-semibold">Assessment Result</h2>
+
+    {% if result %}
+      {% if result.label == "No Stroke Risk" %}
+      <!-- No Stroke Risk: Clean Medical Green Box -->
+      <div class="mt-4 rounded-2xl border-2 border-emerald-300 bg-emerald-50/70 p-5 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-emerald-700">Clinical Risk Classification</div>
+            <div class="text-2xl font-bold text-emerald-900 mt-0.5">{{ result.label }}</div>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-2 gap-4">
+          <div class="rounded-xl bg-white/90 border border-emerald-200 p-4">
+            <div class="text-xs font-medium text-emerald-700">Calculated Risk Probability</div>
+            <div class="text-2xl font-bold text-emerald-800 mt-1">{{ "%.1f"|format(result.proba * 100) }}%</div>
+            <div class="mt-2 w-full bg-emerald-100 rounded-full h-2 overflow-hidden">
+              <div class="bg-emerald-500 h-2 rounded-full" style="width: {{ '%.1f'|format(result.proba * 100) }}%"></div>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white/90 border border-emerald-200 p-4">
+            <div class="text-xs font-medium text-emerald-700">Assessment Timestamp</div>
+            <div class="text-sm font-semibold text-emerald-900 mt-2">{{ result.created_at }}</div>
+          </div>
+        </div>
+      {% else %}
+      <!-- Stroke Risk Detected: Prominent Medical Alert Box -->
+      <div class="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50/70 p-5 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-amber-700">Clinical Risk Classification</div>
+            <div class="text-2xl font-bold text-amber-900 mt-0.5">{{ result.label }}</div>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-2 gap-4">
+          <div class="rounded-xl bg-white/90 border border-amber-200 p-4">
+            <div class="text-xs font-medium text-amber-700">Calculated Risk Probability</div>
+            <div class="text-2xl font-bold text-amber-900 mt-1">{{ "%.1f"|format(result.proba * 100) }}%</div>
+            <div class="mt-2 w-full bg-amber-100 rounded-full h-2 overflow-hidden">
+              <div class="bg-amber-500 h-2 rounded-full" style="width: {{ '%.1f'|format(result.proba * 100) }}%"></div>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white/90 border border-amber-200 p-4">
+            <div class="text-xs font-medium text-amber-700">Assessment Timestamp</div>
+            <div class="text-sm font-semibold text-amber-900 mt-2">{{ result.created_at }}</div>
+          </div>
+        </div>
+      {% endif %}
+
+        <div class="mt-4 text-xs text-slate-500">
+          Saved in History automatically.
+        </div>
+      </div>
+    {% else %}
+      <div class="mt-4 rounded-2xl border border-dashed p-6 text-slate-600 text-sm">
+        No prediction yet. Submit the form to see the result.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

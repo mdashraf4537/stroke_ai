@@ -1,0 +1,10 @@
+Paste your trained model files in this folder:
+
+1) Numerical (scikit-learn pipeline/model):
+   - stroke_ml_model.pkl
+
+2) Image (TensorFlow/Keras):
+   - stroke_cnn_model.keras   (recommended)
+   - stroke_cnn_model.h5      (optional backup)
+
+If filenames differ, edit config.py and app.py accordingly.

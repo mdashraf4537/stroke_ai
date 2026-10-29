@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-3xl font-semibold">Report</h1>
+<p class="mt-2 text-slate-600 text-sm">Summary analytics from your saved predictions.</p>
+
+<div class="mt-6 grid md:grid-cols-5 gap-4">
+  <div class="rounded-2xl bg-white border p-6 shadow-sm">
+    <div class="text-sm text-slate-500">Total Predictions</div>
+    <div class="text-3xl font-semibold mt-1">{{ stats.total }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border p-6 shadow-sm">
+    <div class="text-sm text-slate-500">Numerical</div>
+    <div class="text-3xl font-semibold mt-1">{{ stats.numerical }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border p-6 shadow-sm">
+    <div class="text-sm text-slate-500">Image</div>
+    <div class="text-3xl font-semibold mt-1">{{ stats.image }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border p-6 shadow-sm">
+    <div class="text-sm text-slate-500">MRI Count</div>
+    <div class="text-3xl font-semibold mt-1">{{ stats.mri }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border p-6 shadow-sm">
+    <div class="text-sm text-slate-500">CT Count</div>
+    <div class="text-3xl font-semibold mt-1">{{ stats.ct }}</div>
+  </div>
+</div>
+
+<div class="mt-6 grid lg:grid-cols-2 gap-4">
+  <div class="rounded-2xl bg-white border p-6 shadow-sm">
+    <div class="font-semibold">Predictions by Type</div>
+    <canvas id="typeChart" class="mt-4"></canvas>
+  </div>
+  <div class="rounded-2xl bg-white border p-6 shadow-sm">
+    <div class="font-semibold">Labels Distribution</div>
+    <canvas id="labelChart" class="mt-4"></canvas>
+  </div>
+</div>
+
+<script>
+  const typeData = {{ chart.type_data | tojson }};
+  const labelData = {{ chart.label_data | tojson }};
+
+  const typeCtx = document.getElementById("typeChart");
+  const labelCtx = document.getElementById("labelChart");
+
+  new Chart(typeCtx, {
+    type: "doughnut",
+    data: {
+      labels: typeData.labels,
+      datasets: [{ data: typeData.values }]
+    },
+    options: { responsive: true }
+  });
+
+  new Chart(labelCtx, {
+    type: "bar",
+    data: {
+      labels: labelData.labels,
+      datasets: [{ label: "Count", data: labelData.values }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+  });
+</script>
+{% endblock %}

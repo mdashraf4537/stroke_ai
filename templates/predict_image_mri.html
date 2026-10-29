@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-6">
+  <div class="lg:w-1/2 rounded-3xl bg-white border p-6 shadow-sm">
+    <h1 class="text-2xl font-semibold">MRI Prediction</h1>
+    <p class="mt-2 text-slate-600 text-sm">Upload a brain MRI scan to run classification and Grad-CAM analysis.</p>
+
+    <form id="predict_form" action="{{ url_for('predict_image_mri') }}" method="POST" enctype="multipart/form-data" class="mt-5">
+      <div id="drop_zone" class="relative rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center hover:border-indigo-500 hover:bg-slate-50 transition cursor-pointer">
+        <input id="image_file" name="image_file" type="file" accept="image/png,image/jpeg,image/jpg,.dcm" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+        
+        <div id="drop_prompt" class="space-y-2">
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div class="text-sm font-medium text-slate-700">
+            <span class="text-indigo-600 font-semibold underline">Click to select MRI scan</span> or drag and drop file here
+          </div>
+          <p class="text-xs text-slate-500">Supported formats: PNG, JPG, JPEG, DICOM (.dcm)</p>
+        </div>
+
+        <div id="file_selected_view" class="hidden space-y-3">
+          <div class="flex items-center justify-center gap-2 text-sm font-medium text-slate-800">
+            <span id="file_name_display" class="truncate max-w-xs font-semibold"></span>
+            <span id="file_size_display" class="text-xs text-slate-500"></span>
+          </div>
+          <div id="dicom_badge" class="hidden rounded-xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800 text-left">
+            <div class="font-semibold flex items-center gap-1.5">
+              <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              DICOM Medical Scan Selected
+            </div>
+          </div>
+          <img id="image_preview" class="hidden mx-auto max-h-56 rounded-xl border object-contain" alt="Preview">
+          <div>
+            <button type="button" id="btn_clear_file" class="relative z-20 text-xs text-rose-600 hover:underline font-medium">Remove / Choose another file</button>
+          </div>
+        </div>
+      </div>
+
+      <button id="submit_btn" type="submit" class="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-white font-medium hover:bg-slate-800 flex items-center justify-center gap-2 transition">
+        <svg id="submit_spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <span id="submit_btn_text">Predict + Generate Grad-CAM</span>
+      </button>
+      <div id="processing_notice" class="hidden mt-2 text-xs text-center text-slate-500 animate-pulse">
+        Running model prediction and generating Grad-CAM heatmap...
+      </div>
+    </form>
+  </div>
+
+  <div class="lg:w-1/2 rounded-3xl bg-white border p-6 shadow-sm">
+    <h2 class="text-xl font-semibold">Result</h2>
+
+    {% if img_result %}
+      <div class="mt-4 rounded-2xl border p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Diagnostic Finding</div>
+            <div class="text-2xl font-bold mt-1 {% if 'normal' in img_result.pred_label.lower() %}text-emerald-700{% else %}text-rose-700{% endif %}">
+              {{ img_result.pred_label }}
+            </div>
+          </div>
+          <span class="px-3 py-1 text-xs font-semibold rounded-full {% if 'normal' in img_result.pred_label.lower() %}bg-emerald-100 text-emerald-800 border border-emerald-200{% else %}bg-rose-100 text-rose-800 border border-rose-200{% endif %}">
+            Primary Finding
+          </span>
+        </div>
+
+        <div class="mt-4 grid sm:grid-cols-2 gap-4">
+          <div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Uploaded Scan</div>
+            <img class="mt-2 w-full rounded-2xl border shadow-sm" src="{{ url_for('static', filename='uploads/' + img_result.upload_filename) }}" alt="Uploaded">
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Grad-CAM Activation Map</div>
+            <img class="mt-2 w-full rounded-2xl border shadow-sm" src="{{ url_for('static', filename='outputs/' + img_result.gradcam_filename) }}" alt="GradCAM">
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Class Confidence Distribution</div>
+          <div class="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 border-b">
+                <tr>
+                  <th class="text-left px-4 py-2.5 font-semibold text-slate-600">Classification</th>
+                  <th class="text-right px-4 py-2.5 font-semibold text-slate-600">Confidence</th>
+                  <th class="w-1/3 px-4 py-2.5"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+              {% for row in img_result.probas %}
+                {% set pct = (row[1] * 100)|round(1) %}
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="px-4 py-2.5 font-medium {% if row[0] == img_result.pred_label %}text-indigo-900 font-bold{% else %}text-slate-700{% endif %}">
+                    {{ row[0] }}
+                  </td>
+                  <td class="px-4 py-2.5 text-right font-bold {% if row[0] == img_result.pred_label %}text-indigo-600{% else %}text-slate-600{% endif %}">
+                    {{ "%.1f"|format(pct) }}%
+                  </td>
+                  <td class="px-4 py-2.5">
+                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                      <div class="h-2 rounded-full {% if row[0] == img_result.pred_label %}bg-indigo-600{% else %}bg-slate-400{% endif %}" style="width: {{ pct }}%"></div>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-4 text-xs text-slate-500">Saved in History automatically.</div>
+      </div>
+    {% else %}
+      <div class="mt-4 rounded-2xl border border-dashed p-6 text-slate-600 text-sm">
+        No prediction yet. Upload an image to view the Grad-CAM output.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

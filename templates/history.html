@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+  <div>
+    <h1 class="text-3xl font-semibold">History</h1>
+    <p class="mt-2 text-slate-600 text-sm">All patient predictions stored in SQLite.</p>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <label class="text-sm text-slate-600">Filter:</label>
+    <select id="historyFilter" class="rounded-xl border px-3 py-2 text-sm">
+      <option value="all">All</option>
+      <option value="numerical">Numerical</option>
+      <option value="image_mri">MRI</option>
+      <option value="image_ct">CT</option>
+      <option value="image">Image (old)</option>
+    </select>
+  </div>
+</div>
+
+<div class="mt-6 overflow-hidden rounded-2xl border bg-white shadow-sm">
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="text-left px-4 py-3">Date</th>
+          <th class="text-left px-4 py-3">Type</th>
+          <th class="text-left px-4 py-3">Label</th>
+          <th class="text-left px-4 py-3">Probability</th>
+          <th class="text-left px-4 py-3">Images</th>
+          <th class="text-left px-4 py-3">Clinical Follow-Up</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        {% set case_summary = "Case #" ~ r.id ~ " · " ~ (r.pred_type|upper) ~ " · " ~ (r.label or "N/A") ~ (r.proba is not none and (" (" ~ ("%.1f"|format(r.proba * 100)) ~ "%)") or "") %}
+        {% set case_context = "Case ID #" ~ r.id ~ " recorded on " ~ r.created_at.strftime("%Y-%m-%d %H:%M") ~ ". Diagnostic Modality: " ~ r.pred_type ~ ". Predicted Classification: " ~ (r.label or "Unknown") ~ ". Confidence/Probability: " ~ (r.proba is not none and ("%.1f%%"|format(r.proba * 100)) or "N/A") ~ (r.input_json and (". Patient Tabular Profile: " ~ r.input_json) or "") %}
+        <tr class="border-t hover:bg-slate-50/70 transition" data-row-type="{{ r.pred_type }}">
+          <td class="px-4 py-3 whitespace-nowrap">{{ r.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+          <td class="px-4 py-3 capitalize">{{ r.pred_type }}</td>
+          <td class="px-4 py-3 font-medium">{{ r.label or "-" }}</td>
+          <td class="px-4 py-3">{{ r.proba is not none and ("%.4f"|format(r.proba)) or "-" }}</td>
+          <td class="px-4 py-3">
+            {% if r.pred_type.startswith("image") and r.image_filename %}
+              <div class="flex gap-2">
+                <a class="text-indigo-600 hover:underline font-medium" target="_blank" href="{{ url_for('static', filename='uploads/' + r.image_filename) }}">Upload</a>
+                {% if r.gradcam_filename %}
+                <a class="text-slate-900 hover:underline font-medium" target="_blank" href="{{ url_for('static', filename='outputs/' + r.gradcam_filename) }}">Grad-CAM</a>
+                {% endif %}
+              </div>
+            {% else %}
+              <span class="text-slate-500">—</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            <button
+              type="button"
+              data-context="{{ case_context }}"
+              data-summary="{{ case_summary }}"
+              onclick="openClinicalQaDrawer(this.dataset.context, this.dataset.summary)"
+              class="inline-flex items-center rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-600 hover:text-white transition"
+            >
+              Ask Guidelines
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if rows|length == 0 %}
+        <tr>
+          <td class="px-4 py-8 text-slate-600" colspan="6">No history yet. Run a prediction first.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
